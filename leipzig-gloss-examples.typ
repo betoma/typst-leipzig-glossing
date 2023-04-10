@@ -1,4 +1,4 @@
-#import "leipzig-gloss.typ": gloss, numbered_gloss
+#import "leipzig-gloss.typ": *
 #import "linguistic-abbreviations.typ": *
 
 = Leipzig Glossing Examples
@@ -86,6 +86,42 @@ See https://www.eva.mpg.de/lingua/pdf/Glossing-Rules.pdf
     morphemes: ([3#sg\-laugh-#fut],),
     translation: [s/he will laugh],
 )
+
+#numbered_gloss(
+    header_text: [Hakha Lai],
+    source_text: ([a], [-nii], [-láay]),
+    morphemes: ([3#sg],[-laugh],[-#fut],),
+    translation: [s/he will laugh],
+)
+
+#numbered_gloss(
+    nlevel: true,
+    header_text: [Hakha Lai],
+    gloss_lines: (
+        ([a],[3#sg]),
+        ([nii],[laugh]),
+        ([láay],[#fut]),
+    ),
+    line_styles: (emph,),
+    translation: [s/he will laugh],
+)
+
+#numbered_gloss(
+    nlevel: true,
+    header_text: [Hakha Lai],
+    gloss_lines: (
+        prefix([a],[3#sg]),
+        ([nii],[laugh]),
+        suffix([láay],[#fut]),
+    ),
+    line_styles: (emph,),
+    translation: [s/he will laugh],
+)
+
+#box(stack(dir: ttb, spacing: 0.5em, align(right,[a-]),align(right,[3#sg])))#box(stack(dir:ttb, spacing: 0.5em,[nii],[-láay]))
+
+#box([a-])#box([nii])
+#box([a])#box([-nii])
 
 #numbered_gloss(
     header_text: [Russian],

@@ -4,7 +4,8 @@
     interword_spacing,
     formatters,
     gloss_line_lists,
-    nlevel
+    nlevel,
+    item_styles
 ) = {
     assert(gloss_line_lists.len() > 0, message: "Gloss line lists cannot be empty")
 
@@ -15,7 +16,11 @@
     }
     
     let n_lines = if nlevel == true {
-        gloss_line_lists.at(0).len()
+        if type(gloss_line_lists.at(0)) == "array" {
+                gloss_line_lists.at(0).len()
+            } else {
+                gloss_line_lists.at(0).items.len()
+            }
     } else {
         gloss_line_lists.len()
     }
@@ -26,8 +31,13 @@
         box(stack(dir: ttb, spacing: 0.5em, ..args))
     }
 
+    let prev_space_after = true
     for item_idx in range(0, line_len) {
         let args = ()
+
+        let current_item_dict = if nlevel and type(gloss_line_lists.at(item_idx)) == "dictionary" {true} else {false}
+        let item_in_style_list = if str(item_idx) in item_styles {true} else {false}
+
         for line_idx, formatter in formatters {
             let formatter_fn = if formatter == none {
                 (x) => x
@@ -45,15 +55,49 @@
             } else {
                 item_idx
             }
+            
             let item_group = gloss_line_lists.at(first_idx)
 
-            let item = item_group.at(second_idx)
+            let item = if current_item_dict {
+                    item_group.items.at(second_idx)
+                } else {
+                    item_group.at(second_idx)
+                }
+            assert(type(item)=="content", message: repr(item_group))
             args.push(formatter_fn(item))
         }
-        make_item_box(..args)
-        if item_idx < line_len - 1 {
-            h(interword_spacing)
+
+        let item_formatting = if current_item_dict {
+            gloss_line_lists.at(item_idx).style
+        } else if item_in_style_list {
+            item_styles.item_idx.style
         }
+
+        let spacing_before = if current_item_dict {
+            gloss_line_lists.at(item_idx).spacing_before
+        } else if item_in_style_list {
+            if "spacing_before" in item_styles.item_idx {
+                item_styles.item_idx.spacing_before
+            }
+        } else {true}
+
+        let spacing_after = if current_item_dict {
+            gloss_line_lists.at(item_idx).spacing_after
+        } else if item_in_style_list {
+            if "spacing_after" in item_styles.item_idx {
+                item_styles.item_idx.spacing_after
+            }
+        } else {true}
+
+        args = if item_formatting != none {
+            args.map(x => item_formatting(x))
+        } else {args}
+        if spacing_before and prev_space_after {
+                h(interword_spacing)
+            }
+        make_item_box(..args)
+
+        prev_space_after = spacing_after
     }
 }
 
@@ -69,7 +113,8 @@
     morphemes: none,
     morphemes_style: none,
     gloss_lines: (), // List of lists of content,
-    line_styles: (),
+    line_styles: (), // list of formatting functions to apply per line (in order) to lines in gloss_lines
+    item_styles: (:), // a dictionary from strings of ints (representing the index of the relevant item) to a dictionary containing formatting and spacing values to apply to the item at that index
     translation: none,
     translation_style: none,
     pre_translation_space: .5em,
@@ -119,7 +164,11 @@
         }
 
         let n_lines = if nlevel {
-            gloss_lines.at(0).len()
+            if type(gloss_lines.at(0)) == "array" {
+                gloss_lines.at(0).len()
+            } else {
+                gloss_lines.at(0).items.len()
+            }
         } else {
             gloss_lines.len()
         }
@@ -136,7 +185,7 @@
             gloss_lists.push(gloss_group)
         }
 
-        build_gloss(interword_spacing,formatters,gloss_lists,nlevel)
+        build_gloss(interword_spacing,formatters,gloss_lists,nlevel,item_styles)
 
         if translation != none {
             v(pre_translation_space)
@@ -172,3 +221,26 @@
 #let numbered_gloss = gloss.with(numbering:true)
 
 #let nogloss = " "
+
+#let formatted_item(
+    style: none,
+    no_space_before: false,
+    no_space_after: false,
+    ..list
+) = {
+    return (items: list.pos(), style: style, spacing_before: not no_space_before, spacing_after: not no_space_after)
+}
+
+#let prefix(
+    connector: "-",
+    ..args,
+) = {
+    return formatted_item(..args.pos().map(x => x + connector), style:align.with(right), no_space_after: true)
+}
+
+#let suffix(
+    connector: "-",
+    ..args,
+) = {
+    return formatted_item(..args.pos().map(x => connector + x), style: align.with(left), no_space_before: true)
+}
