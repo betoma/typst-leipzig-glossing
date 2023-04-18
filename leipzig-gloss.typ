@@ -232,7 +232,7 @@
 }
 
 #let prefix(
-    connector: "-",
+    connector: "\u{2011}",
     ..args,
 ) = {
     return formatted_item(..args.pos().map(x => x + connector), style:align.with(right), no_space_after: true)

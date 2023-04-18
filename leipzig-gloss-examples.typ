@@ -120,7 +120,7 @@ See https://www.eva.mpg.de/lingua/pdf/Glossing-Rules.pdf
 
 #box(stack(dir: ttb, spacing: 0.5em, align(right,[a-]),align(right,[3#sg])))#box(stack(dir:ttb, spacing: 0.5em,[nii],[-láay]))
 
-#box([a-])#box([nii])
+#box(align(right,[a\u{2011}]))#box([nii])
 #box([a])#box([-nii])
 
 #numbered_gloss(
