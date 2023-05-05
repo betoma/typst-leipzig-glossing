@@ -28,7 +28,7 @@
     assert(formatters.len() == n_lines, message: "The number of formatters and the number of gloss lines should be equal")
 
     let make_item_box(..args) = {
-        box(stack(dir: ttb, spacing: 0.5em, ..args))
+        box(stack(dir: ttb, spacing: gloss_line_spacing, ..args))
     }
 
     let prev_space_after = true
@@ -38,7 +38,7 @@
         let current_item_dict = if nlevel and type(gloss_line_lists.at(item_idx)) == "dictionary" {true} else {false}
         let item_in_style_list = if str(item_idx) in item_styles {true} else {false}
 
-        for line_idx, formatter in formatters {
+        for (line_idx, formatter) in formatters.enumerate() {
             let formatter_fn = if formatter == none {
                 (x) => x
             } else {
@@ -119,6 +119,7 @@
     translation_style: none,
     pre_translation_space: .5em,
     interword_spacing: 1em,
+    gloss_line_spacing: .5em,
     left_padding: .5em,
     gloss_padding: 2em,
     numbering: false,
@@ -144,21 +145,28 @@
             else {
                 header_text
             }
-            v(post_header_space)
+            if post_header_space != none {
+                v(post_header_space)
+            } else {
+                linebreak()
+            }
         }
 
         let formatters = ()
         let gloss_lists = ()
 
         if source_text != none {
+            assert(nlevel==false, message: "source_text parameter may not be used with nlevel glossing")
             formatters.push(source_text_style)
             gloss_lists.push(source_text)
         }
         if transliteration != none {
+            assert(nlevel==false, message: "transliteration parameter may not be used with nlevel glossing")
             formatters.push(transliteration_style)
             gloss_lists.push(transliteration)
         }
         if morphemes != none {
+            assert(nlevel==false, message: "morphemes parameter may not be used with nlevel glossing")
             formatters.push(morphemes_style)
             gloss_lists.push(morphemes)
         }
@@ -182,22 +190,31 @@
         }
         
         for gloss_group in gloss_lines {
+            assert(type(gloss_group)=="array", message: "gloss_lines must consist of nested lists")
             gloss_lists.push(gloss_group)
         }
 
-        build_gloss(interword_spacing,formatters,gloss_lists,nlevel,item_styles)
+        build_gloss(interword_spacing,gloss_line_spacing,formatters,gloss_lists,nlevel)
 
         if translation != none {
-            v(pre_translation_space)
-            ["#translation"]
+            if pre_translation_space != none {
+                v(pre_translation_space)
+            } else {
+                linebreak()
+            }
+            if translation_style != none{
+                translation_style(translation)
+            }
+            else {
+                translation
+            }
         }
     }
-
 
     if numbering {
         gloss_count.step()
     }
-
+    
     let gloss_number = if numbering {
         [(#gloss_count.display())]
     } else {
