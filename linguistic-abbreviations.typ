@@ -43,6 +43,7 @@ DIST distal
 */
 #let com = smallcaps([com])
 #let dat = smallcaps([dat])
+#let dem = smallcaps([dem])
 
 /*
 DISTR distributive
@@ -63,12 +64,13 @@ INS instrumental
 INTR intransitive
 IPFV imperfective
 */
-
+#let f = smallcaps([f])
 #let du = smallcaps([du])
 #let fut = smallcaps([fut])
 #let gen = smallcaps([gen])
 #let inf = smallcaps([inf])
 #let ins = smallcaps([ins])
+#let ipfv = smallcaps([ipfv])
 
 /*
 IRR irrealis
@@ -86,7 +88,9 @@ PASS passive
 PFV perfective
 PL plural
 */
-
+#let loc = smallcaps([loc])
+#let m = smallcaps([m])
+#let n = smallcaps([n])
 #let obl = smallcaps([obl])
 #let neg = smallcaps([neg])
 #let obj = smallcaps([obj])
@@ -108,9 +112,11 @@ RECP reciprocal
 REFL reflexive
 */
 #let P = smallcaps([p])
-#let pos = smallcaps([pos])
+#let poss = smallcaps([poss])
+#let prs = smallcaps([prs])
 #let prog = smallcaps([prog])
 #let pst = smallcaps([pst])
+#let ptcp = smallcaps([ptcp])
 
 /*
 REL relative
@@ -126,3 +132,4 @@ VOC vocative
 
 #let sg = smallcaps([sg])
 #let sbj = smallcaps([sbj])
+#let sbjv = smallcaps([sbjv])

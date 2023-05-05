@@ -2,10 +2,13 @@
 
 #let build_gloss(
     interword_spacing,
+    gloss_line_spacing,
     formatters,
     gloss_line_lists,
     nlevel,
-    item_styles
+    item_styles,
+    item_alignment,
+    gloss_padding
 ) = {
     assert(gloss_line_lists.len() > 0, message: "Gloss line lists cannot be empty")
 
@@ -31,7 +34,7 @@
         box(stack(dir: ttb, spacing: gloss_line_spacing, ..args))
     }
 
-    let prev_space_after = true
+    let prev_space_after = false
     for item_idx in range(0, line_len) {
         let args = ()
 
@@ -70,29 +73,29 @@
         let item_formatting = if current_item_dict {
             gloss_line_lists.at(item_idx).style
         } else if item_in_style_list {
-            item_styles.item_idx.style
+            item_styles.at(str(item_idx)).style
+            } else if item_alignment != none {
+            align.with(item_alignment)
         }
 
         let spacing_before = if current_item_dict {
             gloss_line_lists.at(item_idx).spacing_before
         } else if item_in_style_list {
-            if "spacing_before" in item_styles.item_idx {
-                item_styles.item_idx.spacing_before
-            }
+            item_styles.at(str(item_idx)).spacing_before
         } else {true}
 
         let spacing_after = if current_item_dict {
             gloss_line_lists.at(item_idx).spacing_after
         } else if item_in_style_list {
-            if "spacing_after" in item_styles.item_idx {
-                item_styles.item_idx.spacing_after
-            }
+            item_styles.at(str(item_idx)).spacing_after
         } else {true}
 
         args = if item_formatting != none {
             args.map(x => item_formatting(x))
         } else {args}
-        if spacing_before and prev_space_after {
+        if item_idx == 0 and gloss_padding != none {
+                h(gloss_padding)
+        } else if spacing_before and prev_space_after {
                 h(interword_spacing)
             }
         make_item_box(..args)
@@ -114,14 +117,16 @@
     morphemes_style: none,
     gloss_lines: (), // List of lists of content,
     line_styles: (), // list of formatting functions to apply per line (in order) to lines in gloss_lines
+    item_alignment: left, // default alignment to apply to items when not overridden for an individual item
     item_styles: (:), // a dictionary from strings of ints (representing the index of the relevant item) to a dictionary containing formatting and spacing values to apply to the item at that index
     translation: none,
     translation_style: none,
     pre_translation_space: .5em,
     interword_spacing: 1em,
     gloss_line_spacing: .5em,
-    left_padding: .5em,
-    gloss_padding: 2em,
+    total_padding: 2.5em,
+    number_padding: .5em,
+    gloss_padding: none,
     numbering: false,
     nlevel: false,
     breakable: false,
@@ -194,7 +199,57 @@
             gloss_lists.push(gloss_group)
         }
 
-        build_gloss(interword_spacing,gloss_line_spacing,formatters,gloss_lists,nlevel)
+        for item in item_styles.keys() {
+            let val = item_styles.at(item)
+            let val_type = type(val)
+            assert(
+                val_type in ("function","dictionary") or(val_type == "string" and val in ("prefix","suffix","no_space_before","no_space_after")),message: "Invalid item style value -- must be function, dictionary, or one of a set of pre-defined strings."
+                )
+            let result_style = if val_type == "function" {
+                (
+                    "style": val,
+                    "spacing_before": true,
+                    "spacing_after": true,
+                )
+            } else if val_type == "string" {
+                if val == "prefix" {
+                    (
+                        "style": x => align(right,x),
+                        "spacing_before": true,
+                        "spacing_after": false,
+                    )
+                } else if val == "suffix" {
+                    (
+                        "style": x => align(left, x),
+                        "spacing_before": false,
+                        "spacing_after": true,
+                    )
+                } else if val == "no_space_before" {
+                    (
+                        "style": none,
+                        "spacing_before": false,
+                        "spacing_after": true,
+                    )
+                } else if val == "no_space_after" {
+                    (
+                        "style": none,
+                        "spacing_before": true,
+                        "spacing_after": false,
+                    )
+                }
+            } else if val_type == "dictionary" {
+                if "spacing_before" not in val {
+                    val.insert("spacing_before", true)
+                }
+                if "spacing_after" not in val {
+                    val.insert("spacing_after", true)
+                }
+                val
+            }
+            item_styles.insert(item, result_style)
+        }
+
+        build_gloss(interword_spacing,gloss_line_spacing,formatters,gloss_lists,nlevel, item_styles, item_alignment, gloss_padding)
 
         if translation != none {
             if pre_translation_space != none {
@@ -225,9 +280,9 @@
         block(breakable: breakable)[
             #stack(
             dir:ltr,
-            left_padding,
+            number_padding,
             [#gloss_number],
-            gloss_padding - left_padding - measure([#gloss_number],styles).width,
+            total_padding - number_padding - measure([#gloss_number],styles).width,
             [#gloss_items]
             )
         ]
@@ -252,12 +307,14 @@
     connector: "\u{2011}",
     ..args,
 ) = {
+    let connector = if connector == "-" {"\u{2011}"}
     return formatted_item(..args.pos().map(x => x + connector), style:align.with(right), no_space_after: true)
 }
 
 #let suffix(
-    connector: "-",
+    connector: "\u{2011}",
     ..args,
 ) = {
+    let connector = if connector == "-" {"\u{2011}"}
     return formatted_item(..args.pos().map(x => connector + x), style: align.with(left), no_space_before: true)
 }
