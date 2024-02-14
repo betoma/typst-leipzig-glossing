@@ -1,6 +1,7 @@
 #import "abbreviations.typ"
 
 #let gloss-count = counter("gloss_count")
+#let subex-count = counter("subex")
 
 #let build_gloss(item-spacing, formatters, gloss_line_lists) = {
     assert(gloss_line_lists.len() > 0, message: "Gloss line lists cannot be empty")
@@ -35,7 +36,7 @@
 }
 
 
-#let gloss(
+#let gloss-lines(
     header: none,
     header-style: none,
     source: (),
@@ -47,12 +48,7 @@
     additional-lines: (), //List of list of content
     translation: none,
     translation-style: none,
-
     item-spacing: 1em,
-    gloss-padding: 2.0em, //TODO document these
-    left_padding: 0.5em,
-    numbering: false,
-    breakable: false,
 ) = {
 
     assert(type(source) == "array", message: "source needs to be an array; perhaps you forgot to type `(` and `)`, or a trailing comma?")
@@ -66,55 +62,63 @@
         assert(transliteration.len() == source.len(), message: "source and transliteration have different lengths")
     }
 
-    let gloss_items = {
-
-        if header != none {
-            if header-style != none {
-                header-style(header)
-            } else {
-                header
-            }
-            linebreak()
+    if header != none {
+        if header-style != none {
+            header-style(header)
+        } else {
+            header
         }
-
-        let formatters = (source-style,)
-        let gloss_line_lists = (source,)
-
-        if transliteration != none {
-            formatters.push(transliteration-style)
-            gloss_line_lists.push(transliteration)
-        }
-
-        if morphemes != none {
-            formatters.push(morphemes-style)
-            gloss_line_lists.push(morphemes)
-        }
-
-        for additional in additional-lines {
-            formatters.push(none) //TODO fix this
-            gloss_line_lists.push(additional)
-        }
-
-
-        build_gloss(item-spacing, formatters, gloss_line_lists)
-
-        if translation != none {
-            linebreak()
-
-            if translation-style == none {
-                translation
-            } else {
-                translation-style(translation)
-            }
-        }
+        linebreak()
     }
 
+    let formatters = (source-style,)
+    let gloss_line_lists = (source,)
+
+    if transliteration != none {
+        formatters.push(transliteration-style)
+        gloss_line_lists.push(transliteration)
+    }
+
+    if morphemes != none {
+        formatters.push(morphemes-style)
+        gloss_line_lists.push(morphemes)
+    }
+
+    for additional in additional-lines {
+        formatters.push(none) //TODO fix this
+        gloss_line_lists.push(additional)
+    }
+
+
+    build_gloss(item-spacing, formatters, gloss_line_lists)
+
+    if translation != none {
+        linebreak()
+
+        if translation-style == none {
+            translation
+        } else {
+            translation-style(translation)
+        }
+    }
+}
+
+#let gloss-ex-shell(
+    left-padding: 0.5em,
+    ex-padding: 2.0em,
+    numbering: false,
+    number-style: "(1)",
+    breakable: false,
+    counter: none, // pass the counter for numbering to use
+    content
+) = {
     if numbering {
-        gloss-count.step()
+        assert(counter != none, message: "gloss-ex-shell needs a counter passed to the function if numbering is true")
+        counter.step()
     }
 
-    let gloss_number = if numbering {
-        [(#gloss-count.display())]
+    let ex-number = if numbering {
+        counter.display(number-style)
     } else {
         none
     }
@@ -122,15 +126,65 @@
     style(styles => {
         block(breakable: breakable)[
             #stack(
-            dir:ltr, //TODO this needs to be more flexible
-            left_padding,
-            [#gloss_number],
-            gloss-padding - left_padding - measure([#gloss_number],styles).width,
-            [#gloss_items]
+                dir:ltr, //TODO this needs to be more flexible
+                left-padding,
+                [#ex-number],
+                ex-padding - left-padding - measure([#ex-number],styles).width,
+                [#content]
             )
         ]
     }
     )
 }
 
+#let ling-example = gloss-ex-shell.with(counter:gloss-count)
+
+#let numbered-example = gloss-ex-shell.with(numbering:true,counter:gloss-count)
+
+#let multi-example(..args, content) = gloss-ex-shell(numbering: true,counter:gloss-count,..args)[
+    #subex-count.update(0)
+    #content
+]
+
+#let sub-example = gloss-ex-shell.with(numbering:true,counter:subex-count,number-style:"a.")
+
+#let gloss(
+    gloss-padding: 2.0em, //TODO document these
+    left-padding: 0.5em,
+    numbering: false,
+    number-style: "(1)",
+    breakable: false,
+    ..args,
+) = {
+    let gloss-lines = gloss-lines(..args)
+    if numbering {
+        numbered-example(
+            left-padding: left-padding,
+            ex-padding: gloss-padding,
+            number-style: number-style,
+            breakable: breakable
+        )[#gloss-lines]
+    } else {
+        ling-example(
+            left-padding: left-padding,
+            ex-padding: gloss-padding,
+            breakable: breakable
+        )[#gloss-lines]
+    }
+}
+
 #let numbered-gloss = gloss.with(numbering: true)
+
+#let sub-gloss(
+    gloss-padding: 2.0em,
+    left-padding: 0.5em,
+    breakable: false,
+    ..args
+) = {
+    let gloss-lines = gloss-lines(..args)
+    sub-example(
+        left-padding: left-padding,
+        ex-padding: gloss-padding,
+        breakable: breakable
+    )[#gloss-lines]
+}

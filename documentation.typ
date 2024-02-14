@@ -1,5 +1,5 @@
 #set document(title: "typst leipzig-glossing documentation")
-#import "leipzig-gloss.typ": abbreviations, gloss, numbered-gloss, gloss-count
+#import "leipzig-gloss.typ": *
 
 #show link: x => underline[*#x*]
 
@@ -273,6 +273,11 @@ along with the Typst markup needed to generate them:
 #{
     gloss-count.update(0)
 }
+
+#multi-example[
+    #sub-example[#lorem(35)]
+    #sub-example[#lorem(35)]
+]
 
 #codeblock(
 "#numbered-gloss(
